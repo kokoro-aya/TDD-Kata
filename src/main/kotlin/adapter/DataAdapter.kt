@@ -1,27 +1,26 @@
 package org.example.adapter
 
 import org.example.database.Database
+import org.example.payload.Table
 
 class DataAdapter(private var database: Database) {
 
-  // Intentionally add some "bad design" like ULong? to see how it's taken care in core
-
-  fun processTransaction(): ULong? =
+  fun processTransaction(): Table =
     TODO("Not implemented")
 
-  fun createEntry(): ULong? =
+  fun createEntry(id: ULong): Table =
     TODO("Not implemented")
 
-  fun addToEntry(): ULong? =
+  fun addToEntry(id: ULong, value: ULong): Table =
     TODO("Not implemented")
 
-  fun minusToEntry(): ULong? =
+  fun minusToEntry(id: ULong, value: ULong): Table =
     TODO("Not implemented")
 
-  fun readEntry(): ULong? =
+  fun readEntry(id: ULong): Table =
     TODO("Not implemented")
 
-  fun commit(): ULong? =
+  fun commit(): Table =
     TODO("Not implemented")
 
   /*

@@ -7,12 +7,12 @@ class BankingCore {
 
   // check fund then decide
 
-  fun deposit(): Unit = TODO("Not implemented yet")
+  fun deposit(id: ULong, value: Double): Unit = TODO("Not implemented yet")
 
   // check fund and account property
   // if present and enough fund -> withdraw
   // else -> do nothing
-  fun withdraw(): Unit = TODO("Not implemented yet")
+  fun withdraw(id: ULong, value: Double): Unit = TODO("Not implemented yet")
 
   fun printStatement(): String = TODO("Not implemented yet")
 }

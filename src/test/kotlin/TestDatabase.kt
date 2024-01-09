@@ -1,21 +1,41 @@
 import org.example.database.Database
-import kotlin.test.Test
-import kotlin.test.fail
+import org.example.database.EntryIdentifierAlreadyExistException
+import org.example.database.EntryIdentifierNotFoundException
+import org.junit.jupiter.api.BeforeEach
+import kotlin.test.*
 
 class TestDatabase {
 
   var database: Database = Database()
 
+  @BeforeEach
+  fun resetDatabase() {
+    database.reset()
+  }
+
+  @Test
+  fun testResetDatabase() {
+    assertTrue { database.dump().isEmpty() }
+
+    database.createEntry(1u)
+    database.addToEntry(1u, 200u)
+
+    assertFalse { database.dump().isEmpty() }
+
+    database.reset()
+
+    assertTrue { database.dump().isEmpty() }
+  }
+
   @Test
   fun testReadNonExistingEntry() {
-    // throw
-    fail("Not implemented yet")
+    assertFailsWith(EntryIdentifierNotFoundException::class) { database.readEntry(29u) }
   }
 
   @Test
   fun testCreateExistingEntry() {
-    // throw
-    fail("Not implemented yet")
+    database.createEntry(1u)
+    assertFailsWith(EntryIdentifierAlreadyExistException::class) { database.createEntry(1u) }
   }
 
   @Test
@@ -94,12 +114,16 @@ class TestDatabase {
 
   }
 
-  // This testing case is quite strange, to review
   @Test
   fun testNoRacing() {
-    database.setLock(true)
+    // test accessing same field by several commands but same result
+    fail("Not implemented yet")
+  }
 
-    // timeout
+  @Test
+  fun testParallelism() {
+    // test accessing database at same time
+    fail("Not implemented yet")
   }
 
 

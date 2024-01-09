@@ -1,55 +1,55 @@
 package org.example.database
 
-import kotlinx.coroutines.sync.Mutex
+import org.example.payload.Table
+
+enum class Action {
+  CREATE, DELETE, ADD, MINUS, READ
+}
 
 class Database {
-
-  // ACID, also usage of mutex instead of @Synchronized to limit it in coroutine scope
-  val mutex = Mutex()
 
   // If aim for lock-free, several solutions possible like CAS or Lamport,
   // but CAS has ABA issue and Lamport could be inefficient
 
-
   // To simplify
-  val database: Map<ULong, ULong> = mutableMapOf()
+  private val database: MutableMap<ULong, Entry> = mutableMapOf()
 
-  fun createEntry(): Unit =
-    TODO("Not implemented")
+  private val logs: MutableList<EntryLog> = mutableListOf()
 
-  fun removeEntry(): Unit =
-    TODO("Not implemented")
+  fun createEntry(id: ULong): Table {
+    return listOf()
+  }
 
-  fun addToEntry(): Unit =
-    TODO("Not implemented")
+  fun removeEntry(id: ULong): Unit {
+    return Unit
+  }
 
-  fun minusToEntry(): Unit =
-    TODO("Not implemented")
+  fun addToEntry(id: ULong, value: ULong): Unit {
+    return Unit
+  }
 
-  fun readEntry(): Unit =
-    TODO("Not implemented")
+  fun minusToEntry(id: ULong, value: ULong): Unit {
+    return Unit
+  }
 
-  fun unreadEntry(): Unit =
-    TODO("Not implemented")
-
+  fun readEntry(id: ULong): Pair<ULong, ULong?> {
+    throw IllegalStateException()
+  }
 
   // undo log, simulate the transaction provided by ORM layer
-  fun rollback(): Unit =
+  fun rollback(/* TODO */): Unit =
     TODO("Not implemented")
 
-  fun processCommand(): Unit =
+  fun processCommand(/* TODO */): Table =
     TODO("Not implemented")
 
-  fun processBatchOfCommands(): Unit =
+  fun processBatchOfCommands(/* TODO */): Table =
     TODO("Not implemented")
 
+  fun reset() {
+    this.database.clear()
+  }
 
-  // Obviously a bad way, just for test purpose
-  fun setLock(state: Boolean): Unit =
-    if (state) {
-      mutex.tryLock()
-      Unit
-    } else {
-      mutex.unlock()
-    }
+  fun dump(): Table
+    = this.database.entries.map { (k, v) -> k to v.value }.toList()
 }

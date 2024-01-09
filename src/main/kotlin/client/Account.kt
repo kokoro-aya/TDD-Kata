@@ -6,10 +6,10 @@ class Account {
 
   // kata interface
 
-  fun deposit(value: Int, timestamp: Date): Unit =
+  fun deposit(value: Double, timestamp: Date): Unit =
     TODO("Not implemented")
 
-  fun withdraw(value: Int, timestamp: Date): Unit =
+  fun withdraw(value: Double, timestamp: Date): Unit =
     TODO("Not implemented")
 
   fun printStatement(): String =
