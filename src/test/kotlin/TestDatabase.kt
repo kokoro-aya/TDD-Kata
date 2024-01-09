@@ -1,7 +1,4 @@
-import org.example.database.Database
-import org.example.database.EntryIdentifierAlreadyExistException
-import org.example.database.EntryIdentifierNotFoundException
-import org.example.database.NegativeValueException
+import org.example.database.*
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.*
 
@@ -99,31 +96,32 @@ class TestDatabase {
 
   @Test
   fun testProcessSingleEntry1() {
-    // ok, some random command
-    database.processCommand("CREATE ID=12")
-
+    assertTrue { database.processCommand("CREATE id=12") == listOf(12uL to 0uL) }
   }
 
   @Test
   fun testProcessSingleEntry2() {
     // ok, some random command
-    database.processCommand("ADD 250 TO ID=12")
+    assertTrue { database.processCommand("ADD 250 TO id=12") == listOf<Pair<ULong, ULong>>() }
 
   }
 
   @Test
   fun testProcessSingleEntry3() {
     // ok, some random command
-    database.processCommand("MINUS 250 TO ID=12")
-
+    assertTrue { database.processCommand("MINUS 250 TO id=12") == listOf<Pair<ULong, ULong>>() }
   }
 
   @Test
   fun testProcessSingleEntry4() {
-    // ok, some random command
-    database.processCommand("READ ID=12")
+    database.createEntry(12uL)
+    database.addToEntry(12uL, 500uL)
+    assertTrue { database.processCommand("READ id=12") == listOf(12uL to 500uL) }
+
 
   }
+
+  // Atomicity
 
   @Test
   fun testProcessBatchEntry1() {

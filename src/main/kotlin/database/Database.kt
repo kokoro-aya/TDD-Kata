@@ -1,10 +1,8 @@
 package org.example.database
 
+import org.example.payload.Action
 import org.example.payload.Table
-
-enum class Action {
-  CREATE, DELETE, ADD, MINUS, READ
-}
+import org.example.utils.parseStatement
 
 class Database {
 
@@ -59,11 +57,42 @@ class Database {
   // CREATE
   // REMOVE
 
-  fun processCommand(command: String): Table =
-    TODO("Not implemented")
+  fun processCommand(command: String): Table {
+    val parsedCommand = parseStatement(command)
 
-  fun processBatchOfCommands(/* TODO */): Table =
-    TODO("Not implemented")
+    return when (parsedCommand.first) {
+      Action.CREATE -> {
+        listOf(createEntry(parsedCommand.second.first))
+      }
+      Action.DELETE -> {
+        removeEntry(parsedCommand.second.first)
+        listOf()
+      }
+      Action.ADD -> {
+        addToEntry(parsedCommand.second.first, parsedCommand.second.second!!)
+        listOf()
+      }
+      Action.MINUS -> {
+        minusToEntry(parsedCommand.second.first, parsedCommand.second.second!!)
+        listOf()
+      }
+      Action.READ -> {
+        listOf(readEntry(parsedCommand.second.first))
+      }
+    }
+  }
+
+  fun processBatchOfCommands(batch: String): Table {
+    val lines = batch.split("\n").filter { it.isNotEmpty() }.map { it.trim() }
+    if (lines.first() == "BEGIN" && lines.last() == "END") {
+      return lines.drop(1).dropLast(1).flatMap { command ->
+        processCommand(command)
+      }
+    } else {
+      println("Database: Illegal batch command format, ignoring...")
+      return listOf()
+    }
+  }
 
   fun reset() {
     this.database.clear()
