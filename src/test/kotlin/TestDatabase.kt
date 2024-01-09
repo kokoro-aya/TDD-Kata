@@ -1,6 +1,7 @@
 import org.example.database.Database
 import org.example.database.EntryIdentifierAlreadyExistException
 import org.example.database.EntryIdentifierNotFoundException
+import org.example.database.NegativeValueException
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.*
 
@@ -28,68 +29,99 @@ class TestDatabase {
   }
 
   @Test
-  fun testReadNonExistingEntry() {
-    assertFailsWith(EntryIdentifierNotFoundException::class) { database.readEntry(29u) }
-  }
-
-  @Test
   fun testCreateExistingEntry() {
     database.createEntry(1u)
     assertFailsWith(EntryIdentifierAlreadyExistException::class) { database.createEntry(1u) }
   }
 
   @Test
+  fun testReadNonExistingEntry() {
+    assertTrue { database.readEntry(29u).second == null }
+  }
+
+  @Test
   fun testCreateAndReadEntry() {
-    // Create,
-    // 0
-    fail("Not implemented yet")
+    database.createEntry(0u)
+    assertTrue { database.readEntry(0u).second == 0uL }
   }
 
   @Test
   fun testAddAndReadEntry() {
-    // Create,
-    // 42
-    fail("Not implemented yet")
+    val valueToAdd: ULong = 429u
+
+    database.createEntry(0u)
+    database.addToEntry(0u, valueToAdd)
+    assertTrue { database.readEntry(0u).second == valueToAdd }
   }
 
   @Test
-  fun testMinusAndReadEntry() {
-    // Create,
-    // -97
-    fail("Not implemented yet")
+  fun testMinusFailureEntry() {
+    val valueToDrop: ULong = 429u
+
+    database.createEntry(0u)
+    assertFailsWith(NegativeValueException::class) { database.minusToEntry(0u, valueToDrop) }
   }
 
   @Test
-  fun testAddAndMinusAndReadEntry() {
-    // Create,
-    // 42
-    // -92
-    fail("Not implemented yet")
+  fun testAddAndMinusAndReadSuccessEntry() {
+    val valueToAdd: ULong = 99u
+    val valueToDrop: ULong = 24u
+
+    database.createEntry(0u)
+    database.addToEntry(0u, valueToAdd)
+    database.minusToEntry(0u, valueToDrop)
+    assertTrue { database.readEntry(0u).second == valueToAdd - valueToDrop }
+  }
+
+  @Test
+  fun testAddAndMinusAndReadFailureEntry() {
+    val valueToAdd: ULong = 42u
+    val valueToDrop: ULong = 92u
+
+    database.createEntry(0u)
+    database.addToEntry(0u, valueToAdd)
+    assertFailsWith(NegativeValueException::class) { database.minusToEntry(0u, valueToDrop) }
   }
 
   @Test
   fun testDeleteEntry() {
     // ok
-    fail("Not implemented yet")
+    database.createEntry(0u)
+    assertTrue { database.dump().isNotEmpty() }
+    database.removeEntry(0u)
+    assertTrue { database.dump().isEmpty() }
   }
 
   @Test
   fun testDeleteNonExistingEntry() {
-    // throw
-    fail("Not implemented yet")
+    assertFailsWith(EntryIdentifierNotFoundException::class) { database.removeEntry(0u) }
   }
 
   @Test
   fun testProcessSingleEntry1() {
     // ok, some random command
-    fail("Not implemented yet")
+    database.processCommand("CREATE ID=12")
 
   }
 
   @Test
   fun testProcessSingleEntry2() {
     // ok, some random command
-    fail("Not implemented yet")
+    database.processCommand("ADD 250 TO ID=12")
+
+  }
+
+  @Test
+  fun testProcessSingleEntry3() {
+    // ok, some random command
+    database.processCommand("MINUS 250 TO ID=12")
+
+  }
+
+  @Test
+  fun testProcessSingleEntry4() {
+    // ok, some random command
+    database.processCommand("READ ID=12")
 
   }
 

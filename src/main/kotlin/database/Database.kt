@@ -16,31 +16,50 @@ class Database {
 
   private val logs: MutableList<EntryLog> = mutableListOf()
 
-  fun createEntry(id: ULong): Table {
-    return listOf()
+  fun createEntry(id: ULong): Pair<ULong, ULong> {
+    Constraints.shouldNotContainEntry(id, database) {
+      database[id] = Entry()
+    }
+
+    return id to database[id]!!.value
   }
 
   fun removeEntry(id: ULong): Unit {
-    return Unit
+    Constraints.shouldContainEntry(id, database) {
+      database.remove(id)
+    }
   }
 
   fun addToEntry(id: ULong, value: ULong): Unit {
-    return Unit
+    database[id]?.let { entry ->
+      entry.value += value
+    }
   }
 
   fun minusToEntry(id: ULong, value: ULong): Unit {
-    return Unit
+    database[id]?.let { entry ->
+      Constraints.shouldBeZeroOrPositive(entry.value, value) {
+        entry.value -= value
+      }
+    }
   }
 
   fun readEntry(id: ULong): Pair<ULong, ULong?> {
-    throw IllegalStateException()
+    return id to database[id]?.value
   }
 
   // undo log, simulate the transaction provided by ORM layer
   fun rollback(/* TODO */): Unit =
     TODO("Not implemented")
 
-  fun processCommand(/* TODO */): Table =
+
+  // ADD
+  // MINUS
+  // READ
+  // CREATE
+  // REMOVE
+
+  fun processCommand(command: String): Table =
     TODO("Not implemented")
 
   fun processBatchOfCommands(/* TODO */): Table =
@@ -52,4 +71,18 @@ class Database {
 
   fun dump(): Table
     = this.database.entries.map { (k, v) -> k to v.value }.toList()
+
+
+  /*
+    BEGIN
+    ADD 10 TO 1992
+    MINUS 9 TO 37
+    END
+ */
+
+  /*
+      READ
+      ID=10
+      VALUE=300
+   */
 }
