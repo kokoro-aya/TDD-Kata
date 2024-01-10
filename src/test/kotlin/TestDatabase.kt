@@ -1,15 +1,16 @@
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import org.example.database.*
-import org.example.payload.Table
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.test.runTest
+import org.example.database.Database
+import org.example.database.EntryIdentifierAlreadyExistException
+import org.example.database.EntryIdentifierNotFoundException
+import org.example.database.NegativeValueException
 import org.junit.jupiter.api.BeforeEach
-import kotlin.concurrent.thread
 import kotlin.test.*
 
 class TestDatabase {
 
-  var database: Database = Database()
+  private var database: Database = Database()
 
   @BeforeEach
   fun resetDatabase() {
@@ -17,7 +18,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testResetDatabase() {
+  fun testResetDatabase() = runTest {
     assertTrue { database.dump().isEmpty() }
 
     database.createEntry(1u)
@@ -31,24 +32,24 @@ class TestDatabase {
   }
 
   @Test
-  fun testCreateExistingEntry() {
+  fun testCreateExistingEntry() = runTest {
     database.createEntry(1u)
     assertFailsWith(EntryIdentifierAlreadyExistException::class) { database.createEntry(1u) }
   }
 
   @Test
-  fun testReadNonExistingEntry() {
+  fun testReadNonExistingEntry() = runTest {
     assertEquals(database.readEntry(29u).second, null)
   }
 
   @Test
-  fun testCreateAndReadEntry() {
+  fun testCreateAndReadEntry() = runTest {
     database.createEntry(0u)
     assertEquals(database.readEntry(0u).second, 0uL)
   }
 
   @Test
-  fun testAddAndReadEntry() {
+  fun testAddAndReadEntry() = runTest {
     val valueToAdd: ULong = 429u
 
     database.createEntry(0u)
@@ -57,7 +58,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testMinusFailureEntry() {
+  fun testMinusFailureEntry() = runTest {
     val valueToDrop: ULong = 429u
 
     database.createEntry(0u)
@@ -65,7 +66,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testAddAndMinusAndReadSuccessEntry() {
+  fun testAddAndMinusAndReadSuccessEntry() = runTest {
     val valueToAdd: ULong = 99u
     val valueToDrop: ULong = 24u
 
@@ -76,7 +77,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testAddAndMinusAndReadFailureEntry() {
+  fun testAddAndMinusAndReadFailureEntry() = runTest {
     val valueToAdd: ULong = 42u
     val valueToDrop: ULong = 92u
 
@@ -86,7 +87,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testDeleteEntry() {
+  fun testDeleteEntry() = runTest {
     // ok
     database.createEntry(0u)
     assertTrue { database.dump().isNotEmpty() }
@@ -95,17 +96,17 @@ class TestDatabase {
   }
 
   @Test
-  fun testDeleteNonExistingEntry() {
+  fun testDeleteNonExistingEntry() = runTest {
     assertFailsWith(EntryIdentifierNotFoundException::class) { database.removeEntry(0u) }
   }
 
   @Test
-  fun testProcessSingleEntry1() {
+  fun testProcessSingleEntry1() = runTest {
     assertEquals(database.processCommand("CREATE id=12"), listOf(12uL to 0uL))
   }
 
   @Test
-  fun testProcessSingleEntry2() {
+  fun testProcessSingleEntry2() = runTest {
     // ok, some random command
     database.createEntry(12uL)
     assertEquals(database.processCommand("ADD 250 TO id=12"), listOf<Pair<ULong, ULong>>())
@@ -113,7 +114,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testProcessSingleEntry3() {
+  fun testProcessSingleEntry3() = runTest {
     // ok, some random command
     database.createEntry(12uL)
     database.addToEntry(12uL, 500uL)
@@ -121,7 +122,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testProcessSingleEntry4() {
+  fun testProcessSingleEntry4() = runTest {
     database.createEntry(12uL)
     database.addToEntry(12uL, 500uL)
     assertEquals(database.processCommand("READ id=12"), listOf(12uL to 500uL))
@@ -132,7 +133,7 @@ class TestDatabase {
   // Atomicity
 
   @Test
-  fun testProcessBatchEntry1() {
+  fun testProcessBatchEntry1() = runTest {
     // ok, some random batch commands
     /*
       Add a user of id 2, give it 100 credits and display his data
@@ -155,7 +156,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testProcessBatchEntry2() {
+  fun testProcessBatchEntry2() = runTest {
     // fail, some random batch commands
 
     /*
@@ -172,7 +173,7 @@ class TestDatabase {
   }
 
   @Test
-  fun testProcessBatchEntry3() {
+  fun testProcessBatchEntry3() = runTest {
     // throw, some random batch commands with errors inside
     /*
        First create two user with id 1 and 2, give them 100 and 50 credits
@@ -196,6 +197,8 @@ class TestDatabase {
     val dump1 = database.dump()
     assertEquals(dump1, listOf(1uL to 100uL, 2uL to 50uL))
 
+
+
     database.processBatchOfCommands("""
       BEGIN
       MINUS 100 TO id=2
@@ -206,6 +209,8 @@ class TestDatabase {
     val dump2 = database.dump()
     assertEquals(dump2, listOf(1uL to 100uL, 2uL to 50uL))
 
+
+
     database.processBatchOfCommands("""
       BEGIN
       ADD 100 TO id=2
@@ -213,13 +218,13 @@ class TestDatabase {
       ADD 100 TO id=1
       END
     """.trim())
-    assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
+
+    val dump3 = database.dump()
+    assertEquals(dump3, listOf(1uL to 100uL, 2uL to 50uL))
   }
 
-  val scope = MainScope()
-
   @Test
-  fun testNoRacing() {
+  fun testNoRacing() = runTest {
     // test accessing same field by several commands but same result
     // accessing user 1, 2, 3, 4 with different transactions in various coroutines
     // with overlaps -> line mutex should work to maintain consistency
@@ -263,13 +268,11 @@ class TestDatabase {
     (1 .. 20).forEach {
       database.processBatchOfCommands(warmUp)
 
-      batches.map {
-        thread {
+      batches.shuffled().map {
+        async {
           database.processBatchOfCommands(it)
         }
-      }.forEach {
-        it.join()
-      }
+      }.awaitAll()
 
       val result = database.processBatchOfCommands(read)
 
@@ -280,13 +283,15 @@ class TestDatabase {
   }
 
   @Test
-  fun testParallelism() {
+  fun testParallelism() = runTest {
     // test accessing database at same time
     // accessing user 1, 2, 3, 4 with different transactions in various coroutines
     // no overlap -> these transactions should be parallelized
 
-    // This test is suspicious since its result is randomized, also because if the lock was designed to
-    // lock the whole DB, the test will also pass although in this case rollbacks will be triggered
+    // This test is suspicious since its result is randomized,
+    // sometimes the test will pass but sometimes not
+    // also because if the lock was designed to lock the whole DB,
+    // the test will also pass although in this case rollbacks will be triggered
 
 
     val batches = listOf(
@@ -326,14 +331,13 @@ class TestDatabase {
     (1 .. 50).forEach {
 
       val resList: MutableList<Pair<ULong, ULong?>> = mutableListOf()
-      batches.map { batch ->
-        thread {
+      batches.shuffled().map { batch ->
+        async {
           val res = database.processBatchOfCommands(batch)
           resList.addAll(res)
         }
-      }.forEach {
-        it.join()
-      }
+      }.awaitAll()
+      // launch { ... } }.forEach { it.join() } will fail
 
       database.reset()
 

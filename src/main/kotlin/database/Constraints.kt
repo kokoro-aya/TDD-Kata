@@ -21,7 +21,7 @@ object Constraints {
   /**
    * This contract checks if a subtraction is valid in terms of a banking system
    */
-  fun shouldBeZeroOrPositive(x: ULong, y: ULong, cont: () -> Unit) {
+  suspend fun shouldBeZeroOrPositive(x: ULong, y: ULong, cont: suspend () -> Unit) {
     if (x > y) {
       cont()
     } else {
@@ -32,7 +32,7 @@ object Constraints {
   /**
    * This contract checks if an entry of given id is present in the database
    */
-  fun shouldContainEntry(id: ULong, dict: MutableMap<ULong, Entry>, cont: (ULong) -> Unit) {
+  suspend fun shouldContainEntry(id: ULong, dict: MutableMap<ULong, Entry>, cont: suspend (ULong) -> Unit) {
     if (dict.containsKey(id)) {
       cont(id)
     } else {
@@ -43,7 +43,7 @@ object Constraints {
   /**
    * This contract checks if an entry of given id is not present in the database
    */
-  fun shouldNotContainEntry(id: ULong, dict: MutableMap<ULong, Entry>, cont: (ULong) -> Unit) {
+  suspend fun shouldNotContainEntry(id: ULong, dict: MutableMap<ULong, Entry>, cont: suspend (ULong) -> Unit) {
     if (dict.containsKey(id)) {
       throw EntryIdentifierAlreadyExistException(id)
     } else {

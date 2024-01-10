@@ -2,10 +2,8 @@ package org.example
 
 import org.example.database.Database
 
-fun main() {
+suspend fun main() {
   val database = Database()
-
-
 
   database.processBatchOfCommands("""
       BEGIN

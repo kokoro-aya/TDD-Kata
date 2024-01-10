@@ -1,6 +1,7 @@
 package org.example.database
 
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.example.payload.Action
 import org.example.payload.Table
 import org.example.utils.parseStatement
@@ -20,78 +21,75 @@ class Database {
 
   private val logs: MutableList<EntryLog> = mutableListOf()
 
-  fun createEntry(id: ULong): Pair<ULong, ULong> {
+  suspend fun createEntry(id: ULong): Pair<ULong, ULong> {
     Constraints.shouldNotContainEntry(id, database) {
       val entry = Entry()
       val mutex = entry.mutex
 
-      mutex.tryLock()
-      // Null since there is no previous value
-      logs.add(EntryLog(Action.CREATE, id to null))
-      database[id] = Entry()
-      mutex.unlock()
-
-      id to database[id]!!.value
+      mutex.withLock {
+        // Null since there is no previous value
+        logs.add(EntryLog(Action.CREATE, id to null))
+        database[id] = Entry()
+      }
     }.let {
       // To keep the execution order otherwise NPE may be thrown
       return id to database[id]!!.value
     }
   }
 
-  fun removeEntry(id: ULong): Unit {
+  suspend fun removeEntry(id: ULong): Unit {
     Constraints.shouldContainEntry(id, database) {
       val mutex = database[id]!!.mutex
-      mutex.tryLock()
-      val lastValue = database[id]!!.value
-      // Save last value to log for revert
-      logs.add(EntryLog(Action.DELETE, id to lastValue))
-      database.remove(id)
-      mutex.unlock()
+      mutex.withLock {
+        val lastValue = database[id]!!.value
+        // Save last value to log for revert
+        logs.add(EntryLog(Action.DELETE, id to lastValue))
+        database.remove(id)
+      }
     }
   }
 
-  fun addToEntry(id: ULong, value: ULong): Unit {
+  suspend fun addToEntry(id: ULong, value: ULong): Unit {
     database[id]?.let { entry ->
       val mutex = entry.mutex
-      mutex.tryLock()
-      logs.add(EntryLog(Action.ADD, id to entry.value))
-      entry.value += value
-      mutex.unlock()
-    } ?: throw EntryIdentifierNotFoundException(id)
-  }
-
-  fun minusToEntry(id: ULong, value: ULong): Unit {
-    database[id]?.let { entry ->
-      val mutex = entry.mutex
-      mutex.tryLock()
-      logs.add(EntryLog(Action.MINUS, id to entry.value))
-      Constraints.shouldBeZeroOrPositive(entry.value, value) {
-        entry.value -= value
+      mutex.withLock {
+        logs.add(EntryLog(Action.ADD, id to entry.value))
+        entry.value += value
       }
-      mutex.unlock()
     } ?: throw EntryIdentifierNotFoundException(id)
   }
 
-  fun readEntry(id: ULong): Pair<ULong, ULong?> {
+  suspend fun minusToEntry(id: ULong, value: ULong): Unit {
+    database[id]?.let { entry ->
+      val mutex = entry.mutex
+      mutex.withLock {
+        logs.add(EntryLog(Action.MINUS, id to entry.value))
+        Constraints.shouldBeZeroOrPositive(entry.value, value) {
+          entry.value -= value
+        }
+      }
+    } ?: throw EntryIdentifierNotFoundException(id)
+  }
+
+  suspend fun readEntry(id: ULong): Pair<ULong, ULong?> {
     return database[id]?.let { entry ->
       val mutex = entry.mutex
-      mutex.tryLock()
-
-      val ret = id to entry.value
-      mutex.unlock()
-      ret
+      mutex.withLock {
+        val ret = id to entry.value
+        ret
+      }
     } ?: (id to null)
   }
 
   // undo log, simulate the transaction provided by ORM layer
-  private fun rollback(begin: Timestamp): Unit {
+  private suspend fun rollback(begin: Timestamp): Unit {
     println("Rollback happened")
     val eventsToRollback = logs.filter { it.timestamp >= begin }.sortedByDescending { it.timestamp }
-    globalMutex.tryLock()
-    eventsToRollback.forEach {
-      rollbackEvent(it)
+    globalMutex.withLock {
+      eventsToRollback.forEach {
+        rollbackEvent(it)
+      }
     }
-    globalMutex.unlock()
   }
 
   private fun rollbackEvent(entry: EntryLog) {
@@ -131,7 +129,7 @@ class Database {
   // CREATE
   // REMOVE
 
-  fun processCommand(command: String): Table {
+  suspend fun processCommand(command: String): Table {
     val parsedCommand = parseStatement(command)
 
     return when (parsedCommand.first) {
@@ -156,7 +154,7 @@ class Database {
     }
   }
 
-  private fun executeTransaction(commands: List<String>): Table {
+  private suspend fun executeTransaction(commands: List<String>): Table {
     val startingTimestamp = Timestamp(System.currentTimeMillis())
     try {
       return commands.flatMap { command ->
@@ -169,7 +167,7 @@ class Database {
     }
   }
 
-  fun processBatchOfCommands(batch: String): Table {
+  suspend fun processBatchOfCommands(batch: String): Table {
     val lines = batch.split("\n").filter { it.isNotEmpty() }.map { it.trim() }
     if (lines.first() == "BEGIN" && lines.last() == "END") {
       val commands = lines.drop(1).dropLast(1)
