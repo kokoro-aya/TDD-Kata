@@ -1,17 +1,29 @@
 package org.example.client
 
+import org.example.banking.BankingCore
 import java.util.*
 
 class Account : IAccount {
 
   // kata interface
 
-  override fun deposit(value: Double): Unit =
-    TODO("Not implemented")
+  val bank: BankingCore
+  val id: ULong
 
-  override fun withdraw(value: Double): Unit =
-    TODO("Not implemented")
+  constructor(bank: BankingCore) {
+    this.bank = bank
+    this.id = bank.create()
+  }
 
-  override fun printStatement(): String =
-    TODO("Not implemented")
+  override fun deposit(value: Double): Unit {
+    bank.deposit(id, value)
+  }
+
+  override fun withdraw(value: Double): Unit {
+    bank.withdraw(id, value)
+  }
+
+  override fun printStatement(): String {
+    return bank.printStatements(id)
+  }
 }
