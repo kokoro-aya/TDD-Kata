@@ -4,6 +4,7 @@ import org.example.utils.encodeStatement
 import org.example.utils.parseResult
 import org.example.utils.parseStatement
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -35,6 +36,11 @@ class TestParsingUtils {
   }
 
   @Test
+  fun testParsingStatementDUMP() {
+    assertEquals(parseStatement("DUMP id=2"), Action.DUMP to (2uL to null))
+  }
+
+  @Test
   fun testEncodingStatementCREATE() {
     assertTrue { encodeStatement(Action.CREATE to (25uL to null)) == "CREATE id=25" }
   }
@@ -57,6 +63,11 @@ class TestParsingUtils {
   @Test
   fun testEncodingStatementREAD() {
     assertTrue { encodeStatement(Action.READ to (27uL to null)) == "READ id=27" }
+  }
+
+  @Test
+  fun testEncodingStatementDUMP() {
+    assertEquals(encodeStatement(Action.DUMP to (4uL to null)), "DUMP id=4")
   }
 
   @Test

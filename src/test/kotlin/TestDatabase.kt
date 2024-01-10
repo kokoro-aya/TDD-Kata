@@ -101,6 +101,16 @@ class TestDatabase {
   }
 
   @Test
+  fun testDumpUserLog() = runTest {
+    database.createEntry(1u)
+    database.addToEntry(1u, 499u)
+    database.minusToEntry(1u, 200u)
+    database.addToEntry(1u, 1u)
+
+    assertEquals(database.dump(1u), listOf(1uL to 0uL, 1uL to 499uL, 1uL to 299uL, 1uL to 300uL))
+  }
+
+  @Test
   fun testProcessSingleEntry1() = runTest {
     assertEquals(database.processCommand("CREATE id=12"), listOf(12uL to 0uL))
   }

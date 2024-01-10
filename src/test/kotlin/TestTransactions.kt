@@ -52,6 +52,12 @@ class TestTransactions {
   }
 
   @Test
+  fun testDumpEntry() = runTest {
+    val command = adapter.dumpEntry(17uL)
+    assertEquals(command, "DUMP id=17")
+  }
+
+  @Test
   fun testAtomicSuccess1() = runTest {
     /*
       BEGIN

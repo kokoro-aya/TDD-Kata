@@ -6,6 +6,7 @@ import org.example.payload.Action
 import org.example.payload.Table
 import org.example.utils.parseStatement
 import java.sql.Timestamp
+import java.time.ZoneOffset
 
 class Database {
 
@@ -28,7 +29,7 @@ class Database {
 
       mutex.withLock {
         // Null since there is no previous value
-        logs.add(EntryLog(Action.CREATE, id to null))
+        logs.add(EntryLog(Action.CREATE, id to 0uL))
         database[id] = Entry()
       }
     }.let {
@@ -81,6 +82,21 @@ class Database {
     } ?: (id to null)
   }
 
+  // Use global lock since the history is stored in log, which cannot be separated currently into line locks
+
+  // Also this function use a view which is slightly different to other functions (Time, Amount) instead of (ID, Amount)
+  // this idea could be troublesome
+  suspend fun dump(id: ULong): List<Pair<ULong, ULong>> {
+    return database[id]?.let { latest ->
+      globalMutex.withLock {
+        val ret = logs.drop(1).filter { entry -> entry.snapshot.first == id }
+          .sortedBy { it.timestamp }
+          .map { it.timestamp.toLocalDateTime().toEpochSecond(ZoneOffset.UTC).toULong() to it.snapshot.second!! }
+        ret + listOf(Timestamp(System.currentTimeMillis()).toLocalDateTime().toEpochSecond(ZoneOffset.UTC).toULong() to latest.value)
+      }
+    } ?: listOf()
+  }
+
   // undo log, simulate the transaction provided by ORM layer
   private suspend fun rollback(begin: Timestamp): Unit {
     println("Rollback happened")
@@ -119,6 +135,9 @@ class Database {
       Action.READ -> {
 
       }
+      Action.DUMP -> {
+
+      }
     }
   }
 
@@ -150,6 +169,9 @@ class Database {
       }
       Action.READ -> {
         listOf(readEntry(parsedCommand.second.first))
+      }
+      Action.DUMP -> {
+        dump(parsedCommand.second.first)
       }
     }
   }

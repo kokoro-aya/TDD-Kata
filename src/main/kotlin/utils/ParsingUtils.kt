@@ -31,6 +31,7 @@ fun encodeStatement(statement: Pair<Action, Pair<ULong, ULong?>>): String =
       }
     }
     Action.READ -> "READ id=${statement.second.first}"
+    Action.DUMP -> "DUMP id=${statement.second.first}"
   }
 
 fun parseStatement(statement: String): Pair<Action, Pair<ULong, ULong?>> {
@@ -67,6 +68,12 @@ fun parseStatement(statement: String): Pair<Action, Pair<ULong, ULong?>> {
       if (tokens[1].startsWith("id=")) {
         val id = tokens[1].drop(3).toULong()
         return Action.READ to (id to null)
+      }
+    }
+    "DUMP" -> {
+      if (tokens[1].startsWith("id=")) {
+        val id = tokens[1].drop(3).toULong()
+        return Action.DUMP to (id to null)
       }
     }
     else -> throw IllegalStateException("Unknown token")

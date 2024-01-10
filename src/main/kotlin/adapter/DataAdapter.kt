@@ -6,7 +6,7 @@ import org.example.payload.Table
 
 class DataAdapter(private var database: Database) {
 
-  fun prepareStatements(statements: List<Pair<Action, Pair<ULong, ULong?>>>): String {
+  private fun prepareStatements(statements: List<Pair<Action, Pair<ULong, ULong?>>>): String {
     return "BEGIN\n" + statements.map { stmt ->
       when (stmt.first) {
         Action.CREATE -> createEntry(stmt.second.first)
@@ -14,11 +14,12 @@ class DataAdapter(private var database: Database) {
         Action.ADD -> addToEntry(stmt.second.first, stmt.second.second!!)
         Action.MINUS -> minusToEntry(stmt.second.first, stmt.second.second!!)
         Action.READ -> readEntry(stmt.second.first)
+        Action.DUMP -> dumpEntry(stmt.second.first)
       }
     }.joinToString("\n") + "\nEND"
   }
 
-  suspend fun commitToDatabase(statements: String): Table =
+  private suspend fun commitToDatabase(statements: String): Table =
     database.processBatchOfCommands(statements)
 
   suspend fun processTransaction(statements: List<Pair<Action, Pair<ULong, ULong?>>>): Table {
@@ -40,4 +41,7 @@ class DataAdapter(private var database: Database) {
 
   fun removeEntry(id: ULong): String =
     "REMOVE id=$id"
+
+  fun dumpEntry(id: ULong): String =
+    "DUMP id=$id"
 }
