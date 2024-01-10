@@ -72,7 +72,7 @@ fun parseStatement(statement: String): Pair<Action, Pair<ULong, ULong?>> {
     else -> throw IllegalStateException("Unknown token")
   }
 
-  throw IllegalStateException("This point should not be reached")
+  throw IllegalStateException("Wrongly formatted statement")
 }
 
 fun encodeResult(result: Pair<ULong, ULong?>): String =

@@ -33,13 +33,13 @@ class TestDatabase {
 
   @Test
   fun testReadNonExistingEntry() {
-    assertTrue { database.readEntry(29u).second == null }
+    assertEquals(database.readEntry(29u).second, null)
   }
 
   @Test
   fun testCreateAndReadEntry() {
     database.createEntry(0u)
-    assertTrue { database.readEntry(0u).second == 0uL }
+    assertEquals(database.readEntry(0u).second, 0uL)
   }
 
   @Test
@@ -48,7 +48,7 @@ class TestDatabase {
 
     database.createEntry(0u)
     database.addToEntry(0u, valueToAdd)
-    assertTrue { database.readEntry(0u).second == valueToAdd }
+    assertEquals(database.readEntry(0u).second, valueToAdd)
   }
 
   @Test
@@ -67,7 +67,7 @@ class TestDatabase {
     database.createEntry(0u)
     database.addToEntry(0u, valueToAdd)
     database.minusToEntry(0u, valueToDrop)
-    assertTrue { database.readEntry(0u).second == valueToAdd - valueToDrop }
+    assertEquals(database.readEntry(0u).second, valueToAdd - valueToDrop)
   }
 
   @Test
@@ -96,27 +96,30 @@ class TestDatabase {
 
   @Test
   fun testProcessSingleEntry1() {
-    assertTrue { database.processCommand("CREATE id=12") == listOf(12uL to 0uL) }
+    assertEquals(database.processCommand("CREATE id=12"), listOf(12uL to 0uL))
   }
 
   @Test
   fun testProcessSingleEntry2() {
     // ok, some random command
-    assertTrue { database.processCommand("ADD 250 TO id=12") == listOf<Pair<ULong, ULong>>() }
+    database.createEntry(12uL)
+    assertEquals(database.processCommand("ADD 250 TO id=12"), listOf<Pair<ULong, ULong>>())
 
   }
 
   @Test
   fun testProcessSingleEntry3() {
     // ok, some random command
-    assertTrue { database.processCommand("MINUS 250 TO id=12") == listOf<Pair<ULong, ULong>>() }
+    database.createEntry(12uL)
+    database.addToEntry(12uL, 500uL)
+    assertEquals(database.processCommand("MINUS 250 TO id=12"), listOf<Pair<ULong, ULong>>())
   }
 
   @Test
   fun testProcessSingleEntry4() {
     database.createEntry(12uL)
     database.addToEntry(12uL, 500uL)
-    assertTrue { database.processCommand("READ id=12") == listOf(12uL to 500uL) }
+    assertEquals(database.processCommand("READ id=12"), listOf(12uL to 500uL))
 
 
   }
@@ -126,22 +129,82 @@ class TestDatabase {
   @Test
   fun testProcessBatchEntry1() {
     // ok, some random batch commands
-    fail("Not implemented yet")
+    /*
+      Add a user of id 2, give it 100 credits and display his data
+     */
+    database.processBatchOfCommands("""
+      BEGIN
+      CREATE id=2
+      END
+    """.trim())
+    assertEquals(database.dump().size, 1)
+
+    database.processBatchOfCommands("""
+      BEGIN
+      ADD 100 TO id=2
+      READ id=2
+      END
+    """.trim())
+    assertEquals(database.dump(), listOf(2uL to 100uL))
 
   }
 
   @Test
   fun testProcessBatchEntry2() {
-    // ok, some random batch commands
-    fail("Not implemented yet")
+    // fail, some random batch commands
 
+    /*
+      Add a user with id 2, drop 100 credits whilst his balance is zero, no transaction should be performed.
+      The account should not exist.
+     */
+    database.processBatchOfCommands("""
+      BEGIN
+      CREATE id=2
+      MINUS 100 TO id=2
+      END
+    """.trim())
+    assertTrue { database.dump().isEmpty() }
   }
 
   @Test
   fun testProcessBatchEntry3() {
     // throw, some random batch commands with errors inside
-    fail("Not implemented yet")
+    /*
+       First create two user with id 1 and 2, give them 100 and 50 credits
 
+       Create user 3 when removing 100 credits from user 2
+
+       Add 100 credits to user 1, 2 and 3
+
+       As a result, second and third batch should be rolled back, only user 1 with 100 credit and 2 with 50 credit should left
+     */
+
+    database.processBatchOfCommands("""
+      BEGIN
+      CREATE id=1
+      ADD 100 TO id=1
+      CREATE id=2
+      ADD 50 TO id=2
+      END
+    """.trim())
+    assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
+
+    database.processBatchOfCommands("""
+      BEGIN
+      MINUS 100 TO id=2
+      CREATE id=3
+      END
+    """.trim())
+    assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
+
+    database.processBatchOfCommands("""
+      BEGIN
+      ADD 100 TO id=2
+      ADD 100 TO id=3
+      ADD 100 TO id=1
+      END
+    """.trim())
+    assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
   }
 
   @Test
