@@ -2,16 +2,16 @@ package org.example.client
 
 import java.util.*
 
-class Account {
+class Account : IAccount {
 
   // kata interface
 
-  fun deposit(value: Double, timestamp: Date): Unit =
+  override fun deposit(value: Double): Unit =
     TODO("Not implemented")
 
-  fun withdraw(value: Double, timestamp: Date): Unit =
+  override fun withdraw(value: Double): Unit =
     TODO("Not implemented")
 
-  fun printStatement(): String =
+  override fun printStatement(): String =
     TODO("Not implemented")
 }

@@ -22,7 +22,7 @@ object Constraints {
    * This contract checks if a subtraction is valid in terms of a banking system
    */
   suspend fun shouldBeZeroOrPositive(x: ULong, y: ULong, cont: suspend () -> Unit) {
-    if (x > y) {
+    if (x >= y) {
       cont()
     } else {
       throw NegativeValueException(x, y)
