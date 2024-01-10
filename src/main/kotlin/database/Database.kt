@@ -23,15 +23,19 @@ class Database {
   fun createEntry(id: ULong): Pair<ULong, ULong> {
     Constraints.shouldNotContainEntry(id, database) {
       val entry = Entry()
+      val mutex = entry.mutex
 
-      entry.mutex.tryLock()
+      mutex.tryLock()
       // Null since there is no previous value
       logs.add(EntryLog(Action.CREATE, id to null))
       database[id] = Entry()
-      entry.mutex.unlock()
-    }
+      mutex.unlock()
 
-    return id to database[id]!!.value
+      id to database[id]!!.value
+    }.let {
+      // To keep the execution order otherwise NPE may be thrown
+      return id to database[id]!!.value
+    }
   }
 
   fun removeEntry(id: ULong): Unit {
@@ -69,19 +73,19 @@ class Database {
   }
 
   fun readEntry(id: ULong): Pair<ULong, ULong?> {
-    database[id]?.let { entry ->
+    return database[id]?.let { entry ->
       val mutex = entry.mutex
       mutex.tryLock()
 
       val ret = id to entry.value
       mutex.unlock()
-      return ret
-    }
-    return id to database[id]?.value
+      ret
+    } ?: (id to null)
   }
 
   // undo log, simulate the transaction provided by ORM layer
   private fun rollback(begin: Timestamp): Unit {
+    println("Rollback happened")
     val eventsToRollback = logs.filter { it.timestamp >= begin }.sortedByDescending { it.timestamp }
     globalMutex.tryLock()
     eventsToRollback.forEach {

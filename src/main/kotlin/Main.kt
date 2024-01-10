@@ -5,6 +5,8 @@ import org.example.database.Database
 fun main() {
   val database = Database()
 
+
+
   database.processBatchOfCommands("""
       BEGIN
       CREATE id=1

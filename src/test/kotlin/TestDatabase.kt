@@ -2,7 +2,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import org.example.database.*
+import org.example.payload.Table
 import org.junit.jupiter.api.BeforeEach
+import kotlin.concurrent.thread
 import kotlin.test.*
 
 class TestDatabase {
@@ -222,23 +224,59 @@ class TestDatabase {
     // accessing user 1, 2, 3, 4 with different transactions in various coroutines
     // with overlaps -> line mutex should work to maintain consistency
 
+    val warmUp = """
+        BEGIN
+        CREATE id=1
+        CREATE id=2
+        ADD 500 TO id=1
+        ADD 500 TO id=2
+        END
+      """.trim()
+
     val batches = listOf(
       """
+        BEGIN
+        MINUS 200 TO id=1
+        ADD 100 TO id=2
+        END
       """,
       """
+        BEGIN
+        MINUS 100 TO id=1
+        ADD 100 TO id=2
+        END
       """,
       """
-      """,
-      """
+        BEGIN
+        MINUS 100 TO id=1
+        END
       """
     ).map { it.trim() }
 
+    val read = """
+      BEGIN
+      READ id=1
+      READ id=2
+      END
+    """.trim()
 
+    (1 .. 20).forEach {
+      database.processBatchOfCommands(warmUp)
 
-    scope.launch {
+      batches.map {
+        thread {
+          database.processBatchOfCommands(it)
+        }
+      }.forEach {
+        it.join()
+      }
 
+      val result = database.processBatchOfCommands(read)
+
+      assertEquals(result, listOf(1uL to 100uL, 2uL to 700uL))
+
+      database.reset()
     }
-
   }
 
   @Test
@@ -246,8 +284,76 @@ class TestDatabase {
     // test accessing database at same time
     // accessing user 1, 2, 3, 4 with different transactions in various coroutines
     // no overlap -> these transactions should be parallelized
-    fail("Not implemented yet")
+
+    // This test is suspicious since its result is randomized, also because if the lock was designed to
+    // lock the whole DB, the test will also pass although in this case rollbacks will be triggered
+
+
+    val batches = listOf(
+      """
+        BEGIN
+        CREATE id=1
+        ADD 500 TO id=1
+        READ id=1
+        END
+      """,
+      """
+        BEGIN
+        CREATE id=2
+        ADD 900 TO id=2
+        READ id=2
+        END
+      """,
+      """
+        BEGIN
+        CREATE id=3
+        ADD 1200 TO id=3
+        READ id=3
+        END
+      """,
+      """
+        BEGIN
+        CREATE id=4
+        ADD 1700 TO id=4
+        READ id=4
+        END
+      """
+    ).map { it.trim() }
+
+    var inOrder = false
+    var outOfOrder = false
+
+    (1 .. 50).forEach {
+
+      val resList: MutableList<Pair<ULong, ULong?>> = mutableListOf()
+      batches.map { batch ->
+        thread {
+          val res = database.processBatchOfCommands(batch)
+          resList.addAll(res)
+        }
+      }.forEach {
+        it.join()
+      }
+
+      database.reset()
+
+      // Only test if we have collected enough table results (4x2 rows)
+      if (resList.size == 8) {
+
+        // Both in-order and out-order should exist at least once in multiple simulations
+        if (resList.map { it.first } == listOf(1uL, 1uL, 2uL, 2uL, 3uL, 3uL, 4uL, 4uL)) {
+          inOrder = true
+        } else {
+          outOfOrder = true
+        }
+      }
+
+    }
+
+    assertTrue(inOrder)
+    assertTrue(outOfOrder)
   }
+
 
 
 }
