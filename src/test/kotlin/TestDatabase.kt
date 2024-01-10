@@ -1,3 +1,6 @@
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import org.example.database.*
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.*
@@ -187,7 +190,9 @@ class TestDatabase {
       ADD 50 TO id=2
       END
     """.trim())
-    assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
+
+    val dump1 = database.dump()
+    assertEquals(dump1, listOf(1uL to 100uL, 2uL to 50uL))
 
     database.processBatchOfCommands("""
       BEGIN
@@ -195,7 +200,9 @@ class TestDatabase {
       CREATE id=3
       END
     """.trim())
-    assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
+
+    val dump2 = database.dump()
+    assertEquals(dump2, listOf(1uL to 100uL, 2uL to 50uL))
 
     database.processBatchOfCommands("""
       BEGIN
@@ -207,15 +214,38 @@ class TestDatabase {
     assertEquals(database.dump(), listOf(1uL to 100uL, 2uL to 50uL))
   }
 
+  val scope = MainScope()
+
   @Test
   fun testNoRacing() {
     // test accessing same field by several commands but same result
-    fail("Not implemented yet")
+    // accessing user 1, 2, 3, 4 with different transactions in various coroutines
+    // with overlaps -> line mutex should work to maintain consistency
+
+    val batches = listOf(
+      """
+      """,
+      """
+      """,
+      """
+      """,
+      """
+      """
+    ).map { it.trim() }
+
+
+
+    scope.launch {
+
+    }
+
   }
 
   @Test
   fun testParallelism() {
     // test accessing database at same time
+    // accessing user 1, 2, 3, 4 with different transactions in various coroutines
+    // no overlap -> these transactions should be parallelized
     fail("Not implemented yet")
   }
 
