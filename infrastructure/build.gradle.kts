@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm")
 }
 
 group = "org.example"
@@ -13,15 +13,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0-RC2")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-
-    implementation(project(":infrastructure"))
-    implementation(project(":banking"))
-    implementation(project(":frontend"))
 }
 
 tasks.test {
     useJUnitPlatform()
 }
 kotlin {
-    jvmToolchain(20)
+    jvmToolchain(8)
 }

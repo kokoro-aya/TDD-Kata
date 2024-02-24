@@ -1,5 +1,7 @@
 ### TDD Banking Kata
 
+TODO: move tests into each module
+
 This solution implements a very simple banking system that supports transactions in terms of atomicity, consistency, and isolation. Although initially called TDD kata, this solution didn't strictly apply the TDD principles. Rather than following tests, I used tests to specify some contracts and express how a certain method should perform in given context, also leaving rooms for future CI/CD pipelines.
 
 Writing banking system in a modern programming language to replace COBOL code could be challenging. One interesting aspect is to discuss the transaction, which is critical to maintain a banking system. In general, database transactions have four properties that should be implemented, which are ACID properties. 

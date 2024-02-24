@@ -3,3 +3,6 @@ plugins {
 }
 rootProject.name = "TDD-Banking-Kata"
 
+include("frontend")
+include("banking")
+include("infrastructure")

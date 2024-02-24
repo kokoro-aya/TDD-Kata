@@ -1,9 +1,9 @@
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
-import org.example.adapter.DataAdapter
+import org.example.database.adapter.DataAdapter
 import org.example.database.Database
-import org.example.payload.Action
+import org.example.database.payload.Action
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertEquals

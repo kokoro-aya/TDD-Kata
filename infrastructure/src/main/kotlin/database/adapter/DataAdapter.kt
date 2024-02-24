@@ -1,8 +1,8 @@
-package org.example.adapter
+package org.example.database.adapter
 
 import org.example.database.Database
-import org.example.payload.Action
-import org.example.payload.Table
+import org.example.database.payload.Action
+import org.example.database.payload.Table
 
 class DataAdapter(private var database: Database) {
 

@@ -1,8 +1,8 @@
-import org.example.payload.Action
-import org.example.utils.encodeResult
-import org.example.utils.encodeStatement
-import org.example.utils.parseResult
-import org.example.utils.parseStatement
+import org.example.database.payload.Action
+import org.example.database.utils.encodeResult
+import org.example.database.utils.encodeStatement
+import org.example.database.utils.parseResult
+import org.example.database.utils.parseStatement
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

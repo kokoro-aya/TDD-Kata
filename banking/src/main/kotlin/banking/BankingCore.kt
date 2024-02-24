@@ -1,9 +1,9 @@
 package org.example.banking
 
 import kotlinx.coroutines.*
-import org.example.adapter.DataAdapter
+import org.example.database.adapter.DataAdapter
 import org.example.database.Database
-import org.example.payload.Action
+import org.example.database.payload.Action
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.*

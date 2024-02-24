@@ -2,9 +2,9 @@ package org.example.database
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.example.payload.Action
-import org.example.payload.Table
-import org.example.utils.parseStatement
+import org.example.database.payload.Action
+import org.example.database.payload.Table
+import org.example.database.utils.parseStatement
 import java.sql.Timestamp
 import java.time.ZoneOffset
 

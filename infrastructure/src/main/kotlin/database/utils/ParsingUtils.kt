@@ -1,6 +1,6 @@
-package org.example.utils
+package org.example.database.utils
 
-import org.example.payload.Action
+import org.example.database.payload.Action
 
 class MissingEncodingField(private val position: Int, private val action: Action) : Exception() {
   override val message: String
